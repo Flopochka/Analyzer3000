@@ -1,25 +1,17 @@
 import time
 import math
 import pygetwindow as gw
-import pyautogui
 import datetime
-import json
-import sys
 import datetime
-import json
 import os
 import threading
-import base64
 import io
 import sqlite3
 import pyaudio
 import numpy as np
-import pystray
 import tkinter as tk
-import queue
 
-from tkinter import messagebox
-from pystray import MenuItem as item, MenuItem, Icon, Menu
+from pystray import MenuItem as MenuItem, Icon, Menu
 from pynput.mouse import Controller, Listener
 from screeninfo import get_monitors
 from pynput import keyboard
@@ -123,11 +115,16 @@ def create_hidden_window():
     hidden_window.withdraw()  # Прячем окно
 
     # Виджет для текста уведомления
-    notification_text = tk.Label(hidden_window, text="", anchor="w", padx=10, pady=10)
-    notification_text.pack(fill="both", expand=True)
+    # notification_text = tk.Label(hidden_window, text="", anchor="w", padx=10, pady=10)
+    # notification_text.pack(fill="both", expand=True)
+    notification_text = tk.Text(height=10)
+    notification_text.pack(anchor="w", fill="both")
+    notification_text.insert("1.0", "мама мыла раму")
 
     def update_text(message):
-        notification_text.config(text=message)
+        notification_text.delete("1.0", tk.END)
+        notification_text.insert("1.0", message)
+        # notification_text.config(text=message)
 
     # Функция для сворачивания окна
     def hide_window():
@@ -444,10 +441,6 @@ def create_tray_icon(hidden_window, update_text, show_window):
     icon = Icon("Analyzer3000", create_icon_image(), menu=Menu(MenuItem("Открыть", lambda: show_window()),
                                                      MenuItem("Выйти", on_quit)))
 
-    # Пример уведомления
-    update_text("You have new notifications!")
-    show_notification("New Notification", "This is a test notification!")
-
     icon.run()
 
 # Функция для создания изображения иконки с буквой S
@@ -487,25 +480,11 @@ def start_listener_mouse():
 
 def main():
     hidden_window, update_text, show_window = create_hidden_window()
-    command_queue = queue.Queue()
-    # Обрабатываем команды в основном потоке
-    def process_queue():
-        while not command_queue.empty():
-            command = command_queue.get()
-            if command[0] == "quit":
-                hidden_window.quit()  # Завершаем главный цикл Tkinter
-            elif command[0] == "show":
-                show_window()
-            elif command[0] == "update_text":
-                update_text(command[1])  # Обновляем текст
-        hidden_window.after(100, process_queue)  # Проверяем очередь каждые 100 мс
     # Запуск системного трей и скрытого окна
     tray_thread = threading.Thread(target=create_tray_icon, args=(hidden_window, update_text, show_window))
     tray_thread.start()
-    hidden_window.after(100, process_queue)
+    update_text("Тестовый текст")
     hidden_window.mainloop()
-    command_queue.put(("update_text", "Новое уведомление!"))
-    command_queue.put(("show",))
     # Создаем и запускаем отдельный поток для прослушивания событий
     listener_thread_mouse = threading.Thread(target=start_listener_mouse)
     listener_thread_mouse.daemon = True  # Поток завершится при выходе из программы
